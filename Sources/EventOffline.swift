@@ -81,12 +81,33 @@ extension SentryClient {
     
     // MARK: - Private Helpers
     
-    /// Path of directory to which events will be saved in offline mode
-    private func directory() -> String? {
+    /// Path of old directory to which events where saved in offline mode
+    private func oldDirectory() -> String? {
         #if swift(>=3.0)
             guard let documentsPath = NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true).first else { return nil }
         #else
             guard let documentsPath = NSSearchPathForDirectoriesInDomains(.DocumentDirectory, .UserDomainMask, true).first else { return nil }
+        #endif
+        
+        guard let serverURLString = dsn.url.absoluteString else {
+            return nil
+        }
+        
+        let directory = "\(directoryNamePrefix)\(serverURLString.hashValue)"
+        
+        #if swift(>=3.0)
+            return (documentsPath as NSString).appendingPathComponent(directory)
+        #else
+            return (documentsPath as NSString).stringByAppendingPathComponent(directory)
+        #endif
+    }
+    
+    /// Path of directory to which events will be saved in offline mode
+    private func directory() -> String? {
+        #if swift(>=3.0)
+            guard let documentsPath = NSSearchPathForDirectoriesInDomains(.libraryDirectory, .userDomainMask, true).first else { return nil }
+        #else
+            guard let documentsPath = NSSearchPathForDirectoriesInDomains(.LibraryDirectory, .UserDomainMask, true).first else { return nil }
         #endif
         
         guard let serverURLString = dsn.url.absoluteString else {
@@ -117,6 +138,26 @@ extension SentryClient {
         #else
             try NSFileManager.defaultManager().createDirectoryAtPath(sentryDir, withIntermediateDirectories: true, attributes: nil)
             return (sentryDir as NSString).stringByAppendingPathComponent(event.eventID)
+        #endif
+    }
+    
+    /*
+     Move old directory to to current save directory
+     - Throws: Will throw upon failure to move directory
+     */
+    public func moveOldDirectory() throws{
+        guard let oldSentryDir = oldDirectory()else { return }
+        guard let sentryDir = directory()else { return }
+        
+        #if swift(>=3.0)
+            if NSFileManager.default().fileExists(atPath: oldSentryDir) {
+                try NSFileManager.default().moveItem(atPath: oldSentryDir, toPath: sentryDir)
+            }
+        #else
+            if NSFileManager.defaultManager().fileExistsAtPath(oldSentryDir) {
+                SentryLog.Debug.log("Moveing saved events\n  from: \(oldSentryDir)\n  to: \(sentryDir)")
+                try NSFileManager.defaultManager().moveItemAtPath(oldSentryDir, toPath: sentryDir)
+            }
         #endif
     }
     

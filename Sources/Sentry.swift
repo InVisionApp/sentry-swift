@@ -150,6 +150,11 @@ internal enum SentryError: Error {
         #endif
         
         super.init()
+        
+        do{
+            try moveOldDirectory()
+        } catch {}
+        
         sendEventsOnDiskInBackground()
     }
     
