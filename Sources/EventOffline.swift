@@ -151,11 +151,12 @@ extension SentryClient {
         
         #if swift(>=3.0)
             if NSFileManager.default().fileExists(atPath: oldSentryDir) {
+                SentryLog.Debug.log("Moving saved events\n  from: \(oldSentryDir)\n  to: \(sentryDir)")
                 try NSFileManager.default().moveItem(atPath: oldSentryDir, toPath: sentryDir)
             }
         #else
             if NSFileManager.defaultManager().fileExistsAtPath(oldSentryDir) {
-                SentryLog.Debug.log("Moveing saved events\n  from: \(oldSentryDir)\n  to: \(sentryDir)")
+                SentryLog.Debug.log("Moving saved events\n  from: \(oldSentryDir)\n  to: \(sentryDir)")
                 try NSFileManager.defaultManager().moveItemAtPath(oldSentryDir, toPath: sentryDir)
             }
         #endif
